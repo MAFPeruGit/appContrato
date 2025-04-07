@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> <!-- SweetAlert2 -->
+  <title>Contrato Form</title>
+</head>
+<body>
+
+  <div class="min-h-screen bg-gray-100 flex items-center justify-center p-6">
+    <div class="bg-white shadow-2xl rounded-2xl p-8 max-w-md w-full">
+      <h2 class="text-2xl font-bold mb-6 text-center text-gray-800">Crear Registro en CRM</h2>
+      
+      <label class="block mb-2 font-medium text-gray-700">¿Qué deseas crear?</label>
+      <select id="tipoRegistro" onchange="actualizarFormulario()" class="w-full mb-6 p-3 border rounded-lg">
+        <option value="">Seleccionar</option>
+        <option value="1">Operación (Contrato)</option>
+        <option value="2">Cliente</option>
+      </select>
+  
+      <div id="formContainer">
+        <!-- Este bloque se reemplazará dinámicamente -->
+      </div>
+  
+      <button onclick="enviarFormulario()" class="w-full mt-4 bg-red-600 text-white p-3 rounded-lg hover:bg-red-700 transition duration-200">
+        Enviar
+      </button>
+    </div>
+  </div>
+
+  <script>
+    function actualizarFormulario() {
+      const tipo = document.getElementById("tipoRegistro").value;
+      const formContainer = document.getElementById("formContainer");
+
+      if (tipo === "1") {
+        formContainer.innerHTML = `
+          <label class="block mb-2 font-medium text-gray-700">Número de OP</label>
+          <input type="text" id="opNumber" placeholder="Ej. 123456" class="w-full p-3 border rounded-lg" />
+          <p class="text-sm text-gray-500 mt-2">Ingrese el número de orden de la operación para crear el contrato.</p>
+        `;
+      } else if (tipo === "2") {
+        formContainer.innerHTML = `
+          <label class="block mb-2 font-medium text-gray-700">Documento</label>
+          <input type="text" id="docCliente" placeholder="Ej. 70888555" class="w-full p-3 border rounded-lg" />
+          <p class="text-sm text-gray-500 mt-2">Ingrese el documento del cliente para crear el registro correspondiente.</p>
+        `;
+      } else {
+        formContainer.innerHTML = "";
+      }
+    }
+
+    function enviarFormulario() {
+      const tipo = document.getElementById("tipoRegistro").value;
+
+      if (tipo === "1") {
+        const op = document.getElementById("opNumber").value;
+        if (!op) {
+          return Swal.fire({
+            icon: 'warning',
+            title: 'Falta completar',
+            text: 'Por favor, ingrese el número de OP.'
+          });
+        }
+        enviarDatos({ tipo: "contrato", op });
+      } else if (tipo === "2") {
+        const documento = document.getElementById("docCliente").value;
+        if (!documento) {
+          return Swal.fire({
+            icon: 'warning',
+            title: 'Falta completar',
+            text: 'Por favor, ingrese el documento del cliente.'
+          });
+        }
+        enviarDatos({ tipo: "documento", dni: documento });
+      } else {
+        Swal.fire({
+          icon: 'info',
+          title: 'Opción no seleccionada',
+          text: 'Por favor, seleccione si desea crear una operación o un cliente.'
+        });
+      }
+    }
+
+    function enviarDatos(data) {
+  Swal.fire({
+    title: 'Creando registro...',
+    text: 'Por favor espera mientras se procesa la solicitud.',
+    allowOutsideClick: false,
+    didOpen: () => {
+      Swal.showLoading(); // Activa loader
+    }
+  });
+
+  fetch("https://prod-40.westus.logic.azure.com:443/workflows/197552a9aabb4b8aa7f6397881ba2d7e/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=sdOIdSYCYJ2I42384zNa5Y44Q8TsC5LqLcpHq-lqnmQ", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data)
+  }).then(res => {
+    if (res.ok) {
+      Swal.fire({
+        icon: 'success',
+        title: 'Enviado',
+        text: 'Formulario enviado correctamente.'
+      });
+    } else {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Hubo un error al enviar el formulario.'
+      });
+    }
+  }).catch(() => {
+    Swal.fire({
+      icon: 'error',
+      title: 'Error de red',
+      text: 'No se pudo conectar al servidor.'
+    });
+  });
+}
+
+
+    window.onload = actualizarFormulario;
+  </script>
+</body>
+</html>
